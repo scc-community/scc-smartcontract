@@ -20,7 +20,8 @@ type Account struct {
 	Balance  float64
 }
 
-var adminUserName = "testadmin"
+var adminUserName = "xxxx"
+var initAdminBalance = 100.00
 
 func (s *SmartContract) Init(APIAPIstub shim.ChaincodeStubInterface) sc.Response {
 	return shim.Success(nil)
@@ -45,9 +46,9 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 
 // init ledger
 func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
-	var account = Account{Balance: 1000000000.00}
+	var account = Account{Balance: initAdminBalance}
     accountAsBytes, _ := json.Marshal(account)
-    APIstub.PutState("xxxxxxxxxxxx", accountAsBytes)
+    APIstub.PutState(adminUserName, accountAsBytes)
 	return shim.Success(nil)
 }
 
@@ -104,6 +105,56 @@ func (t *SmartContract) queryAccount(APIstub shim.ChaincodeStubInterface, args [
 	return shim.Success(accountInfo)
 }
 
+func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAmt string) sc.Response {
+    if from == to {
+        return shim.Error("Cannot transfer to oneself")
+    }
+
+    // if args[0] != uname {
+    //     return shim.Error("No permission")
+    // }
+
+    amount, err := strconv.ParseFloat(strAmt, 64)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+
+    if amount <= 0 {
+        return shim.Error("Incorrect amount")
+    }
+
+    accountFromAsBytes, _ := APIstub.GetState(from)
+    accountToAsBytes, _ := APIstub.GetState(to)
+
+    if accountFromAsBytes == nil {
+        return shim.Error("Account not exist!")
+    }
+
+    if accountToAsBytes == nil {
+        return shim.Error("Account not exist!")
+    }
+
+    accountFrom := Account{}
+    accountTo := Account{}
+
+    json.Unmarshal(accountFromAsBytes, &accountFrom)
+    json.Unmarshal(accountToAsBytes, &accountTo)
+
+    if accountFrom.Balance < amount {
+        return shim.Error("Not enough money")
+    }
+
+    accountFrom.Balance = accountFrom.Balance - amount
+    accountTo.Balance = accountTo.Balance + amount
+
+    accountFromAsBytes, _ = json.Marshal(accountFrom)
+    accountToAsBytes, _ = json.Marshal(accountTo)
+    APIstub.PutState(from, accountFromAsBytes)
+    APIstub.PutState(to, accountToAsBytes)
+
+	return shim.Success(nil)
+}
+
 // trading from A account to B account
 func (s *SmartContract) trading(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
         
@@ -130,53 +181,11 @@ func (s *SmartContract) trading(APIstub shim.ChaincodeStubInterface, args []stri
 		return shim.Error("Incorrect number of arguments. Expecting 3")
 	}
 
-    if args[0] == args[1] {
-        return shim.Error("Cannot transfer to oneself")
-    }
-
-    // if args[0] != uname {
-    //     return shim.Error("No permission")
-    // }
-
-    amount, err := strconv.ParseFloat(args[2], 64)
-    if err != nil {
-        return shim.Error(err.Error())
-    }
-
-    if amount <= 0 {
-        return shim.Error("Incorrect amount")
-    }
-
-    accountFromAsBytes, _ := APIstub.GetState(args[0])
-    accountToAsBytes, _ := APIstub.GetState(args[1])
-
-    if accountFromAsBytes == nil {
-        return shim.Error("Account not exist!")
-    }
-
-    if accountToAsBytes == nil {
-        return shim.Error("Account not exist!")
-    }
-
-    accountFrom := Account{}
-    accountTo := Account{}
-
-    json.Unmarshal(accountFromAsBytes, &accountFrom)
-    json.Unmarshal(accountToAsBytes, &accountTo)
-
-    if accountFrom.Balance < amount {
-        return shim.Error("Not enough money")
-    }
-
-    accountFrom.Balance = accountFrom.Balance - amount
-    accountTo.Balance = accountTo.Balance + amount
-
-    accountFromAsBytes, _ = json.Marshal(accountFrom)
-    accountToAsBytes, _ = json.Marshal(accountTo)
-    APIstub.PutState(args[0], accountFromAsBytes)
-    APIstub.PutState(args[1], accountToAsBytes)
-
-	return shim.Success(nil)
+	from := args[0]
+	to := args[1]
+	strAmt := args[2]
+	fmt.Printf("trading BEGIN: from=%s, to=%s, amt=%s\n", from, to, strAmt)
+	return transfer(APIstub, from, to, strAmt)
 }
 
 // give an account some reward
@@ -185,64 +194,11 @@ func (t *SmartContract) reward(APIstub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Incorrect number of arguments. Expecting 2")
 	}
 
-	toAccount := args[0]
-	// Get the state from the ledger
-	accountToAsBytes, err := APIstub.GetState(toAccount)
-	if err != nil {
-		return shim.Error("Failed to get state")
-	}
-    if accountToAsBytes == nil {
-        return shim.Error("Account not exist!")
-    }
-    accountTo := Account{}
-    json.Unmarshal(accountToAsBytes, &accountTo)
-
-	if toAccount == adminUserName {
-		return shim.Error("user must not be admin")	
-	}
-
-	// Get admin from the ledger
-	adminValbytes, err := APIstub.GetState(adminUserName)
-	if err != nil {
-		return shim.Error("Failed to get state")
-	}
-	if adminValbytes == nil {
-		return shim.Error("admin Entity not found")
-	}
-	adminVal, err := strconv.ParseFloat(string(adminValbytes), 64)
-	if err != nil {
-		return shim.Error("Invalid user amount, expecting a float value")
-	}
-
-	// Perform the execution
-	amt, err := strconv.ParseFloat(args[1], 64)
-	if err != nil {
-		return shim.Error("Invalid transaction amount, expecting a float value")
-	}
-	if amt <= 0 {
-		return shim.Error("Invalid transaction amount, expecting > 0")
-	}
-	if adminVal < amt {
-		return shim.Error("admin amount no enough")
-	}
-	accountTo.Balance = accountTo.Balance + amt
-	adminVal = adminVal - amt
-	adminNewVal := strconv.FormatFloat(adminVal, 'f', -1, 64)
-	fmt.Printf("user=%s, userNewVal=%s, adminNewVal\n", toAccount, accountTo.Balance, adminNewVal)
-
-	// Write the state back to the ledger
-    accountToAsBytes, err = json.Marshal(accountTo)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-    APIstub.PutState(args[1], accountToAsBytes)
-
-	err = APIstub.PutState(adminUserName, []byte(adminNewVal))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	return shim.Success(nil)
+	from := adminUserName
+	to := args[0]
+	strAmt := args[1]
+	fmt.Printf("reward BEGIN: to=%s, amt=%s\n", to, strAmt)
+	return transfer(APIstub, from, to, strAmt)
 }
 
 func main() {
