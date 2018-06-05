@@ -1,2 +1,2 @@
 # fabric-chaincode
-hyperledger fabric chaincode and nodejs sdk sample 
+hyperledger fabric chaincode and nodejs sdk 
