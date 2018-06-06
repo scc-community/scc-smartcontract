@@ -6,15 +6,10 @@ var app=express();
 var queryScc = require('../queryScc');
 var invokeScc = require('../invokeScc');
 var chaincodeName = "scc"
-var channelName = "mychannel"
+var channelName = "sccchannel"
 
 //监听http请求
 app.listen(8081);
-app.get('/test',function (req,res) {
-    	console.log(req.query.a)
-	console.log(req.query.b)
-    	res.send("test")
-})
 app.get('/queryAccount', async function (req,res) {
 	var account = req.query.account
 	var args = [ account ]
