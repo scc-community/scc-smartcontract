@@ -18,6 +18,13 @@ type SmartContract struct {
 
 type Account struct {
 	Balance  float64
+	PubKey	string
+	addrList	string /////////
+}
+
+type PubAndPriKey struct {
+	PrivateKey  string
+	PublicKey	string
 }
 
 var adminUserName = "xxxx"
@@ -31,6 +38,8 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 	function, args := APIstub.GetFunctionAndParameters()
 	if function == "initLedger" {
 		return t.initLedger(APIstub)
+	} else if function == "createPubAndPriKey" {
+		return t.createPubAndPriKey(APIstub, args)
 	} else if function == "createAccount" {
 		return t.createAccount(APIstub, args)
 	} else if function == "queryAccount" {
@@ -46,10 +55,21 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 
 // init ledger
 func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
+
 	var account = Account{Balance: initAdminBalance}
     accountAsBytes, _ := json.Marshal(account)
     APIstub.PutState(adminUserName, accountAsBytes)
 	return shim.Success(nil)
+}
+
+// create public key and private key using Secp256k1
+func (s *SmartContract) createPubAndPriKey(APIstub shim.ChaincodeStubInterface) sc.Response {
+	wallet := NewWallet()
+	if wallet == nil || wallet.PublicKey == nil || wallet.PrivateKey == nil {
+		return shim.Error("Failed to get keys")
+	}
+	var keyInfo = PubAndPriKey{PublicKey: byteString(wallet.PublicKey), PrivateKey: byteString(wallet.PrivateKey)}
+	return shim.Success(keyInfo)
 }
 
 // Create account
