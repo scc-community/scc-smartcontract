@@ -81,7 +81,9 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 			result = {
 				"code" : "SUCCESS",
 				"msg" : "SUCCESS",
-				"balance" : arr.Balance 
+			}
+			for (var a in arr) {
+        		result[a] = arr[a]
 			}
 		}
 	} else {
