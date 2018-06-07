@@ -39,7 +39,7 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 	if function == "initLedger" {
 		return t.initLedger(APIstub)
 	} else if function == "createPubAndPriKey" {
-		return t.createPubAndPriKey(APIstub, args)
+		return t.createPubAndPriKey(APIstub)
 	} else if function == "createAccount" {
 		return t.createAccount(APIstub, args)
 	} else if function == "queryAccount" {
@@ -69,7 +69,8 @@ func (s *SmartContract) createPubAndPriKey(APIstub shim.ChaincodeStubInterface) 
 		return shim.Error("Failed to get keys")
 	}
 	var keyInfo = PubAndPriKey{PublicKey: byteString(wallet.PublicKey), PrivateKey: byteString(wallet.PrivateKey)}
-	return shim.Success(keyInfo)
+	var result, _ = json.Marshal(keyInfo)
+    return shim.Success(result)
 }
 
 // Create account

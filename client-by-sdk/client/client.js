@@ -11,8 +11,7 @@ var channelName = "sccchannel"
 //监听http请求
 app.listen(8081);
 app.get('/createPubAndPriKey', async function (req,res) {
-	var account = req.query.account
-	var args = [ account ]
+	var args = [  ]
 	const a= async ()=> {  
 		return queryScc.query(chaincodeName, 'createPubAndPriKey', args)
 	}  
