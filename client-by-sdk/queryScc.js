@@ -27,7 +27,7 @@ var store_path = path.join(__dirname, 'hfc-key-store');
 console.log('Store path:'+store_path);
 var tx_id = null;
 
-function query(chaincodeId, fcn, user) {
+function query(chaincodeId, fcn, args) {
 // create the key value store as defined in the fabric-client/config/default.json 'key-value-store' setting
 return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 }).then((state_store) => {
@@ -57,7 +57,7 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 		chaincodeId: chaincodeId,
 		fcn: fcn,
 		//fcn: 'queryAllCars',
-		args: user
+		args: args
 	};
 
 	// send the query proposal to the peer

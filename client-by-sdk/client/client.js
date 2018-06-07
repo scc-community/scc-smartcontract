@@ -10,6 +10,24 @@ var channelName = "sccchannel"
 
 //监听http请求
 app.listen(8081);
+app.get('/createPubAndPriKey', async function (req,res) {
+	var account = req.query.account
+	var args = [ account ]
+	const a= async ()=> {  
+		return queryScc.query(chaincodeName, 'createPubAndPriKey', args)
+	}  
+	  
+	var result = await a().then((info)=>{  
+		return info
+	})  
+	if (typeof(result)=='undefined') {
+		result = {
+			"code" : "FAIL",
+			"msg" : "FAIL"
+	        }
+	}
+    res.send(result)
+})
 app.get('/queryAccount', async function (req,res) {
 	var account = req.query.account
 	var args = [ account ]
@@ -26,7 +44,7 @@ app.get('/queryAccount', async function (req,res) {
 			"msg" : "FAIL"
 	        }
 	}
-    	res.send(result)
+    res.send(result)
 })
 app.get('/createAccount', async function (req,res) {
 	var account = req.query.account
@@ -45,7 +63,7 @@ app.get('/createAccount', async function (req,res) {
 			"msg" : "FAIL"
 	        }
 	}
-    	res.send(result)
+    res.send(result)
 })
 app.get('/trading', async function (req,res) {
 	var from = req.query.from
@@ -65,7 +83,7 @@ app.get('/trading', async function (req,res) {
 			"msg" : "FAIL"
 	        }
 	}
-    	res.send(result)
+    res.send(result)
 })
 app.get('/reward', async function (req,res) {
 	var to = req.query.to
@@ -84,5 +102,5 @@ app.get('/reward', async function (req,res) {
 			"msg" : "FAIL"
 	        }
 	}
-    	res.send(result)
+    res.send(result)
 })
