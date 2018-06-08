@@ -16,16 +16,19 @@ import (
 type SmartContract struct {
 }
 
+type TokenAddress struct {
+	TokenName  string
+	Address  string
+}
 type Account struct {
 	Balance  float64
-	PubKey	string
-	addrList	string /////////
+	AddrList	[]TokenAddress
 }
 
-type PubAndPriKey struct {
-	PrivateKey  string
-	PublicKey	string
-}
+// type PubAndPriKey struct {
+// 	PrivateKey  string
+// 	PublicKey	string
+// }
 
 var adminUserName = "xxxx"
 var initAdminBalance = 100.00
@@ -38,8 +41,8 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 	function, args := APIstub.GetFunctionAndParameters()
 	if function == "initLedger" {
 		return t.initLedger(APIstub)
-	} else if function == "createPubAndPriKey" {
-		return t.createPubAndPriKey(APIstub)
+	// } else if function == "createPubAndPriKey" {
+	// 	return t.createPubAndPriKey(APIstub)
 	} else if function == "createAccount" {
 		return t.createAccount(APIstub, args)
 	} else if function == "queryAccount" {
@@ -63,20 +66,20 @@ func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Respo
 }
 
 // create public key and private key using Secp256k1
-func (s *SmartContract) createPubAndPriKey(APIstub shim.ChaincodeStubInterface) sc.Response {
-	wallet := NewWallet()
-	if wallet == nil || wallet.PublicKey == nil || wallet.PrivateKey == nil {
-		return shim.Error("Failed to get keys")
-	}
-	var keyInfo = PubAndPriKey{PublicKey: byteString(wallet.PublicKey), PrivateKey: byteString(wallet.PrivateKey)}
-	var result, _ = json.Marshal(keyInfo)
-    return shim.Success(result)
-}
+// func (s *SmartContract) createPubAndPriKey(APIstub shim.ChaincodeStubInterface) sc.Response {
+// 	wallet := NewWallet()
+// 	if wallet == nil || wallet.PublicKey == nil || wallet.PrivateKey == nil {
+// 		return shim.Error("Failed to get keys")
+// 	}
+// 	var keyInfo = PubAndPriKey{PublicKey: byteString(wallet.PublicKey), PrivateKey: byteString(wallet.PrivateKey)}
+// 	var result, _ = json.Marshal(keyInfo)
+//     return shim.Success(result)
+// }
 
 // Create account
 func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting 2")
+	if len(args) != 1 {
+		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
     checkAccount, err := APIstub.GetState(args[0])
 	if err != nil {
@@ -86,12 +89,7 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
         return shim.Error("Account already exists!")
     }
 
-    initBalance, err := strconv.ParseFloat(args[1], 64)
-    if err != nil {
-            return shim.Error(err.Error())
-    }
-
-	var account = Account{Balance: initBalance}
+	var account = Account{Balance: 0}
 
 	accountAsBytes, _ := json.Marshal(account)
 	APIstub.PutState(args[0], accountAsBytes)
