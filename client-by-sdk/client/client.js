@@ -41,6 +41,7 @@ app.get('/createAccount', async function (req,res) {
 			"code" : "FAIL",
 			"msg" : "param fail!"
 	    })
+	    return
 	}
 	var accountInfo = account.create(password);
 	var address = accountInfo.address
@@ -56,7 +57,7 @@ app.get('/createAccount', async function (req,res) {
 		result = {
 			"code" : "FAIL",
 			"msg" : "call cc fail!"
-	        }
+	    }
 	}
 	if (result["code"] == 'SUCCESS') {
 		for (var key in accountInfo) {
@@ -72,6 +73,7 @@ app.get('/queryAccount', async function (req,res) {
 			"code" : "FAIL",
 			"msg" : "param fail!"
 	    })
+	    return
 	}
 	var args = [ address ]
 	const a= async ()=> {  
@@ -84,8 +86,8 @@ app.get('/queryAccount', async function (req,res) {
 	if (typeof(result)=='undefined') {
 		result = {
 			"code" : "FAIL",
-			"msg" : "FAIL"
-	        }
+			"msg" : "call cc fail"
+	    }
 	}
     res.send(result)
 })
@@ -93,29 +95,47 @@ app.get('/trading', async function (req,res) {
 	var from = req.query.from
 	var to = req.query.to
 	var amt = req.query.amt
-	// var sign = req.query.sign
+	var r = req.query.r
+	var v = req.query.v
+	var s = req.query.s
 	var password = req.query.password
 	var keystore = req.query.keystore	// json
-	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) /*|| !_checkParam(sign)*/
+	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) 
+		 || !_checkParam(r) || !_checkParam(v) || !_checkParam(s)
 		 || !_checkParam(password) || !_checkParam(keystore)) {
 		res.send({
 			"code" : "FAIL",
 			"msg" : "param fail!"
 	    })
+		return
 	}
 
-	// var privateKey = account.recover(password, JSON.stringify(keystore));
-	var privateKey = account.recover(password, keystore);
-	var tx = new Transaction();
-	tx.from = from;
-	tx.to = to;
-	tx.amount = amt;
-	tx.sign(privateKey);
-	if (!tx.verify()) {
+	try {
+		// var privateKey = account.recover(password, JSON.stringify(keystore));
+		var privateKey = account.recover(password, keystore);
+		var privateKeyBuf = Buffer.from(privateKey, 'hex');
+		var tx = new Transaction();
+		tx.from = from;
+		tx.to = to;
+		tx.amount = amt;
+		tx.r = Buffer.from(r, 'hex')
+		tx.v = v
+		tx.s = Buffer.from(s, 'hex')
+		// tx.sign(privateKeyBuf);
+		if (!tx.verify()) {
+			res.send({
+				"code" : "FAIL",
+				"msg" : "sign check fail!"
+		    })
+		    return
+		}
+	} catch(err) {
+		console.error(err)
 		res.send({
 			"code" : "FAIL",
-			"msg" : "sign check fail!"
+			"msg" : "sign verify catch error"
 	    })
+		return
 	}
 
 	var args = [ from, to, amt ]
@@ -130,7 +150,7 @@ app.get('/trading', async function (req,res) {
 		result = {
 			"code" : "FAIL",
 			"msg" : "FAIL"
-	        }
+	    }
 	}
     res.send(result)
 })
