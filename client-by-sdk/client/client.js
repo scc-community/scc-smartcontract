@@ -8,22 +8,53 @@ var invokeScc = require('../invokeScc');
 var chaincodeName = "scc"
 var channelName = "sccchannel"
 
+var account = require('../account/account');
+var Transaction = require('../account/transaction');
+
+
 //监听http请求
 app.listen(8081);
-app.get('/createPubAndPriKey', async function (req,res) {
-	var args = [  ]
-	const a= async ()=> {  
-		return queryScc.query(chaincodeName, 'createPubAndPriKey', args)
+// app.get('/createPubAndPriKey', async function (req,res) {
+// 	var args = [  ]
+// 	const a= async ()=> {  
+// 		return queryScc.query(chaincodeName, 'createPubAndPriKey', args)
+// 	}  
+	  
+// 	var result = await a().then((info)=>{  
+// 		return info
+// 	})  
+// 	if (typeof(result)=='undefined') {
+// 		result = {
+// 			"code" : "FAIL",
+// 			"msg" : "FAIL"
+// 	        }
+// 	}
+//     res.send(result)
+// })
+app.get('/createAccount', async function (req,res) {
+	// var account = req.query.account
+	// var amt = req.query.amt
+	// var args = [ account, amt ]
+	var accountInfo = account.create(password);
+	var address = accountInfo.address
+	var args = [ address ]
+	const a= async ()=> {
+		return invokeScc.invoke(chaincodeName, 'createAccount', args, channelName)
 	}  
 	  
 	var result = await a().then((info)=>{  
 		return info
-	})  
+	})
 	if (typeof(result)=='undefined') {
 		result = {
 			"code" : "FAIL",
 			"msg" : "FAIL"
 	        }
+	}
+	if (result["code"] == 'SUCCESS') {
+		for (var key in accountInfo) {
+			result[key] = accountInfo[key]
+		} 
 	}
     res.send(result)
 })
@@ -32,25 +63,6 @@ app.get('/queryAccount', async function (req,res) {
 	var args = [ account ]
 	const a= async ()=> {  
 		return queryScc.query(chaincodeName, 'queryAccount', args)
-	}  
-	  
-	var result = await a().then((info)=>{  
-		return info
-	})  
-	if (typeof(result)=='undefined') {
-		result = {
-			"code" : "FAIL",
-			"msg" : "FAIL"
-	        }
-	}
-    res.send(result)
-})
-app.get('/createAccount', async function (req,res) {
-	var account = req.query.account
-	var amt = req.query.amt
-	var args = [ account, amt ]
-	const a= async ()=> {  
-		return invokeScc.invoke(chaincodeName, 'createAccount', args, channelName)
 	}  
 	  
 	var result = await a().then((info)=>{  
