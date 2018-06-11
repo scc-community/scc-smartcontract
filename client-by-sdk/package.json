@@ -7,9 +7,13 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
+        "elliptic": "^6.4.0",
+        "ethereumjs-util": "^5.2.0",
         "fabric-ca-client": "~1.1.0",
         "fabric-client": "~1.1.0",
-        "grpc": "^1.6.0"
+        "grpc": "^1.6.0",
+        "js-sha3": "^0.7.0",
+        "keythereum": "^1.0.4"
     },
     "author": "Anthony O'Dowd",
     "license": "Apache-2.0",
