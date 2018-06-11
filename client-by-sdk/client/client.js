@@ -35,10 +35,17 @@ app.get('/createAccount', async function (req,res) {
 	// var account = req.query.account
 	// var amt = req.query.amt
 	// var args = [ account, amt ]
+	var password = req.query.password
+	if (password === null || password === undefined || password === '') {
+		res.send({
+			"code" : "FAIL",
+			"msg" : "param fail!"
+	    })
+	}
 	var accountInfo = account.create(password);
 	var address = accountInfo.address
 	var args = [ address ]
-	const a= async ()=> {
+	const a = async ()=> {
 		return invokeScc.invoke(chaincodeName, 'createAccount', args, channelName)
 	}  
 	  
@@ -48,7 +55,7 @@ app.get('/createAccount', async function (req,res) {
 	if (typeof(result)=='undefined') {
 		result = {
 			"code" : "FAIL",
-			"msg" : "FAIL"
+			"msg" : "call cc fail!"
 	        }
 	}
 	if (result["code"] == 'SUCCESS') {
