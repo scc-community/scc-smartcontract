@@ -36,7 +36,7 @@ app.get('/createAccount', async function (req,res) {
 	// var amt = req.query.amt
 	// var args = [ account, amt ]
 	var password = req.query.password
-	if (password === null || password === undefined || password === '') {
+	if (!_checkParam(password)) {
 		res.send({
 			"code" : "FAIL",
 			"msg" : "param fail!"
@@ -66,8 +66,14 @@ app.get('/createAccount', async function (req,res) {
     res.send(result)
 })
 app.get('/queryAccount', async function (req,res) {
-	var account = req.query.account
-	var args = [ account ]
+	var address = req.query.address
+	if (!_checkParam(address)) {
+		res.send({
+			"code" : "FAIL",
+			"msg" : "param fail!"
+	    })
+	}
+	var args = [ address ]
 	const a= async ()=> {  
 		return queryScc.query(chaincodeName, 'queryAccount', args)
 	}  
@@ -87,6 +93,31 @@ app.get('/trading', async function (req,res) {
 	var from = req.query.from
 	var to = req.query.to
 	var amt = req.query.amt
+	// var sign = req.query.sign
+	var password = req.query.password
+	var keystore = req.query.keystore	// json
+	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) /*|| !_checkParam(sign)*/
+		 || !_checkParam(password) || !_checkParam(keystore)) {
+		res.send({
+			"code" : "FAIL",
+			"msg" : "param fail!"
+	    })
+	}
+
+	// var privateKey = account.recover(password, JSON.stringify(keystore));
+	var privateKey = account.recover(password, keystore);
+	var tx = new Transaction();
+	tx.from = from;
+	tx.to = to;
+	tx.amount = amt;
+	tx.sign(privateKey);
+	if (!tx.verify()) {
+		res.send({
+			"code" : "FAIL",
+			"msg" : "sign check fail!"
+	    })
+	}
+
 	var args = [ from, to, amt ]
 	const a= async ()=> {  
 		return invokeScc.invoke(chaincodeName, 'trading', args, channelName)
@@ -118,7 +149,14 @@ app.get('/reward', async function (req,res) {
 		result = {
 			"code" : "FAIL",
 			"msg" : "FAIL"
-	        }
+	    }
 	}
     res.send(result)
 })
+
+function _checkParam(param) {
+	if (param === null || param === undefined || param === '') {
+        return false;
+    }
+    return true;
+}
