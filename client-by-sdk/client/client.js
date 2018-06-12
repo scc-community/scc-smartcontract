@@ -10,7 +10,7 @@ var channelName = "sccchannel"
 
 var account = require('../account/account');
 var Transaction = require('../account/transaction');
-
+var interval = 10000;	// 10s
 
 //监听http请求
 app.listen(8081);
@@ -62,6 +62,10 @@ app.get('/createAccount', async function (req,res) {
 	if (result["code"] == 'SUCCESS') {
 		for (var key in accountInfo) {
 			result[key] = accountInfo[key]
+			////
+			if(key === "keystore"){
+				console.log(JSON.stringify(accountInfo[key]))
+			}
 		} 
 	}
     res.send(result)
@@ -100,6 +104,15 @@ app.get('/trading', async function (req,res) {
 	var s = req.query.s
 	var password = req.query.password
 	var keystore = req.query.keystore	// json
+	var timestamp = req.query.timestamp
+	var currentTimestamp = Date.now();
+    if(!_checkParam(timestamp) || Math.abs(currentTimestamp - timestamp) > interval) {
+        res.send({
+			"code" : "FAIL",
+			"msg" : "param fail! Timestamp Error!"
+	    })
+		return
+    }
 	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) 
 		 || !_checkParam(r) || !_checkParam(v) || !_checkParam(s)
 		 || !_checkParam(password) || !_checkParam(keystore)) {
