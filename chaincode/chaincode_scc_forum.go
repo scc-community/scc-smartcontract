@@ -22,7 +22,7 @@ type TokenAddress struct {
 }
 type Account struct {
 	Balance  float64
-	AddrList	[]TokenAddress
+	OtherTokenAddrList	[]TokenAddress
 }
 
 // type PubAndPriKey struct {
@@ -81,18 +81,20 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-    checkAccount, err := APIstub.GetState(args[0])
+	var address = args[0]
+    checkAccount, err := APIstub.GetState(address)
 	if err != nil {
 		return shim.Error("Failed to get state")
 	}
     if checkAccount != nil {
-        return shim.Error("Account already exists!")
+        return shim.Error("Address already exists!")
     }
 
 	var account = Account{Balance: 0}
 
 	accountAsBytes, _ := json.Marshal(account)
-	APIstub.PutState(args[0], accountAsBytes)
+	APIstub.PutState(address, accountAsBytes)
+	fmt.Printf("createAccount Success! address=%s\n", address)
 
 	return shim.Success(nil)
 }
@@ -105,17 +107,17 @@ func (t *SmartContract) queryAccount(APIstub shim.ChaincodeStubInterface, args [
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
 
-	account := args[0]
+	address := args[0]
 
 	// Get the state from the ledger
-	accountInfo, err := APIstub.GetState(account)
+	accountInfo, err := APIstub.GetState(address)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + account + "\"}"
+		jsonResp := "{\"Error\":\"Failed to get state for " + address + "\"}"
 		return shim.Error(jsonResp)
 	}
 
 	if accountInfo == nil {
-		jsonResp := "{\"Error\":\"Info of " + account + " is nil or maybe this account not exist\"}"
+		jsonResp := "{\"Error\":\"Info of " + address + " is nil or maybe this address not exist\"}"
 		return shim.Error(jsonResp)
 	}
 
