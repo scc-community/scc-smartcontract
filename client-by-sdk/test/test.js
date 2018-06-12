@@ -18,6 +18,8 @@ var tx = new Transaction();
 tx.from = from;
 tx.to = '0x1111';
 tx.amount = 123;
+tx.timestamp = Date.now();
 
 tx.sign(privateKey);
+console.log(JSON.stringify(tx));
 console.log(tx.verify());

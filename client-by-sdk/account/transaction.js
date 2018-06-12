@@ -4,6 +4,7 @@ var util = require('ethereumjs-util');
 var crypto = require('crypto');
 
 var hashAlgo = "sha256";
+var interval = 1000000000;
 
 function Transaction() {
     var v;
@@ -12,6 +13,7 @@ function Transaction() {
     var from;
     var to;
     var amount;
+    var timestamp;
     var version;
     var txHash;
 }
@@ -21,6 +23,7 @@ function _getMsgHash(tx) {
         from: tx.from,
         to: tx.to,
         amount: tx.amount,
+        timestamp: tx.timestamp,
         version: tx.version != null ? tx.version : 1,
     }
     return crypto.createHash(hashAlgo).update(JSON.stringify(msg)).digest();
@@ -54,6 +57,12 @@ Transaction.prototype.sign = function (privateKey) {
 };
 
 Transaction.prototype.verify = function () {
+    // compare timepstamp
+    var currentTimestamp = Date.now();
+    if(!this.timestamp || Math.abs(currentTimestamp - this.timestamp) > interval) {
+        console.debug("Timestamp Error!");
+        return false;
+    }
     // compare from address
     var publicKey = util.ecrecover(_getMsgHash(this), this.v, this.r, this.s);
     var address = '0x' + util.publicToAddress(publicKey).toString('hex');
