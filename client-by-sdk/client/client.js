@@ -125,14 +125,15 @@ app.get('/trading', async function (req,res) {
 
 	try {
 		// var privateKey = account.recover(password, JSON.stringify(keystore));
-		var privateKey = account.recover(password, keystore);
-		var privateKeyBuf = Buffer.from(privateKey, 'hex');
-		var tx = new Transaction();
-		tx.from = from;
-		tx.to = to;
-		tx.amount = amt;
+		var privateKey = account.recover(password, keystore)
+		var privateKeyBuf = Buffer.from(privateKey, 'hex')
+		var tx = new Transaction()
+		tx.from = from
+		tx.to = to
+		tx.amount = parseFloat(amt)
+		tx.timestamp = parseInt(timestamp)
 		tx.r = Buffer.from(r, 'hex')
-		tx.v = v
+		tx.v = parseInt(v)
 		tx.s = Buffer.from(s, 'hex')
 		// tx.sign(privateKeyBuf);
 		if (!tx.verify()) {
