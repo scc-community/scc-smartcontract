@@ -4,10 +4,11 @@ import (
     // "bytes"
 	"encoding/json"
 	"fmt"
-	"strconv"
+	// "strconv"
     // "crypto/x509"
     // "encoding/pem"
 
+	"github.com/shopspring/decimal"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	sc "github.com/hyperledger/fabric/protos/peer"
 )
@@ -126,10 +127,21 @@ func (t *SmartContract) queryAccount(APIstub shim.ChaincodeStubInterface, args [
 	return shim.Success(accountInfo)
 }
 
-func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAmt string) sc.Response {
+func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAmt string, msg []byte, sign []byte) sc.Response {
+
     if from == to {
         return shim.Error("Cannot transfer to oneself")
     }
+
+    // verify sign
+    pubKey, err := RecoverPubkey(msg, sign)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+
+	if !VerifySignature(pubKey, msg, sign[:len(sign)-1]) {
+        return shim.Error("verify sign fail!")
+	}
 
     // if args[0] != uname {
     //     return shim.Error("No permission")
@@ -209,15 +221,17 @@ func (s *SmartContract) trading(APIstub shim.ChaincodeStubInterface, args []stri
     // uname:=cert.Subject.CommonName	
     /////////////////////
 
-	if len(args) != 3 {
-		return shim.Error("Incorrect number of arguments. Expecting 3")
+	if len(args) != 5 {
+		return shim.Error("Incorrect number of arguments. Expecting 5")
 	}
 
 	from := args[0]
 	to := args[1]
 	strAmt := args[2]
+	msg := args[3]
+	sign := args[4]
 	fmt.Printf("trading BEGIN: from=%s, to=%s, amt=%s\n", from, to, strAmt)
-	return transfer(APIstub, from, to, strAmt)
+	return transfer(APIstub, from, to, strAmt, msg, sign)
 }
 
 // give an account some reward
@@ -230,7 +244,7 @@ func (t *SmartContract) reward(APIstub shim.ChaincodeStubInterface, args []strin
 	to := args[0]
 	strAmt := args[1]
 	fmt.Printf("reward BEGIN: to=%s, amt=%s\n", to, strAmt)
-	return transfer(APIstub, from, to, strAmt)
+	return transfer(APIstub, from, to, strAmt, nil, nil)
 }
 
 func main() {
