@@ -1,4 +1,5 @@
 # fabric-chaincode
+* go get github.com/shopspring/decimal
 * node client-by-sdk/client/client.js
 * http://xxxx:8081/createAccount?amt=100&account=abc
 * http://xxxx:8081/queryAccount?account=abc

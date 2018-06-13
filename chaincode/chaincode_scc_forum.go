@@ -21,7 +21,7 @@ type TokenAddress struct {
 	Address  string
 }
 type Account struct {
-	Balance  float64
+	Balance  string
 	OtherTokenAddrList	[]TokenAddress
 }
 
@@ -31,7 +31,7 @@ type Account struct {
 // }
 
 var adminUserName = "xxxx"
-var initAdminBalance = 100.00
+var initAdminBalance = "100"
 
 func (s *SmartContract) Init(APIAPIstub shim.ChaincodeStubInterface) sc.Response {
 	return shim.Success(nil)
@@ -90,7 +90,7 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
         return shim.Error("Address already exists!")
     }
 
-	var account = Account{Balance: 0}
+	var account = Account{Balance: "0"}
 
 	accountAsBytes, _ := json.Marshal(account)
 	APIstub.PutState(address, accountAsBytes)
@@ -135,13 +135,14 @@ func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAm
     //     return shim.Error("No permission")
     // }
 
-    amount, err := strconv.ParseFloat(strAmt, 64)
+    // amount, err := strconv.ParseFloat(strAmt, 64)
+    amount, err := decimal.NewFromString(strAmt)
     if err != nil {
         return shim.Error(err.Error())
     }
 
-    if amount <= 0 {
-        return shim.Error("Incorrect amount")
+    if(!amount.IsPositive()) {
+        return shim.Error("Incorrect amount < 0")
     }
 
     accountFromAsBytes, _ := APIstub.GetState(from)
@@ -160,13 +161,23 @@ func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAm
 
     json.Unmarshal(accountFromAsBytes, &accountFrom)
     json.Unmarshal(accountToAsBytes, &accountTo)
+    fromBal, err := decimal.NewFromString(accountFrom.Balance)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+    toBal, err := decimal.NewFromString(accountTo.Balance)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
 
-    if accountFrom.Balance < amount {
+    if fromBal.Cmp(amount) < 0 {
         return shim.Error("Not enough money")
     }
 
-    accountFrom.Balance = accountFrom.Balance - amount
-    accountTo.Balance = accountTo.Balance + amount
+    fromBal = fromBal.Sub(amount)
+    toBal = toBal.Add(amount)
+    accountFrom.Balance = fromBal.String()
+    accountTo.Balance = toBal.String()
 
     accountFromAsBytes, _ = json.Marshal(accountFrom)
     accountToAsBytes, _ = json.Marshal(accountTo)
