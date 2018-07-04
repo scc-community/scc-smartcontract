@@ -4,7 +4,6 @@ import (
     // "bytes"
 	"encoding/json"
 	"fmt"
-	"./common"
 	// "strconv"
     // "crypto/x509"
     // "encoding/pem"
@@ -25,11 +24,6 @@ type TokenAddress struct {
 type Account struct {
 	Balance  string
 	OtherTokenAddrList	[]TokenAddress
-}
-type NewAccountInfo struct {
-	PrivateKey  string    `json:"privateKey"`
-	Address	string    `json:"address"`
-	Keystore string    `json:"Keystore"`
 }
 
 // type PubAndPriKey struct {
@@ -88,19 +82,7 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-	var password = args[0]
-	if(password == "") {
-		return shim.Error("password invalid")
-	}
-
-	privateKey, address, keyStoreJson, err := common.CreateAccount(password)
-	if err != nil {
-		return shim.Error("Failed to create account! err=" + err.Error())
-	}
-	if(privateKey == "" || address == "" || keyStoreJson == "") {
-		return shim.Error("Failed to create account! return data has null! privateKey=" + privateKey + ",address=" + address + ",keyStoreJson=" + keyStoreJson)
-	}
-
+	var address = args[0]
     checkAccount, err := APIstub.GetState(address)
 	if err != nil {
 		return shim.Error("Failed to get state")
@@ -115,8 +97,7 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
 	APIstub.PutState(address, accountAsBytes)
 	fmt.Printf("createAccount Success! address=%s\n", address)
 
-	newAccountInfo := NewAccountInfo{privateKey, address, keyStoreJson}
-	return shim.Success(newAccountInfo)
+	return shim.Success(nil)
 }
 
 
@@ -220,6 +201,25 @@ func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAm
 
 // trading from A account to B account
 func (s *SmartContract) trading(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+        
+    /////////////////////
+    // creatorByte,_:= APIstub.GetCreator()
+    // certStart := bytes.IndexAny(creatorByte, "-----BEGIN")
+    // if certStart == -1 {
+    //         return shim.Error("No certificate found")
+    // }
+    // certText := creatorByte[certStart:]
+    // bl, _ := pem.Decode(certText)
+    // if bl == nil {
+    //         return shim.Error("cannot decode pem")
+    // }
+
+    // cert, err := x509.ParseCertificate(bl.Bytes)
+    // if err != nil {
+    //         return shim.Error(err.Error())
+    // }
+    // uname:=cert.Subject.CommonName	
+    /////////////////////
 
 	if len(args) != 5 {
 		return shim.Error("Incorrect number of arguments. Expecting 5")
