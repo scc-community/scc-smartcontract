@@ -4,7 +4,7 @@ import (
     // "bytes"
 	"encoding/json"
 	"fmt"
-	"./common"
+	// "./common"
 	// "strconv"
     // "crypto/x509"
     // "encoding/pem"
@@ -93,7 +93,7 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
 		return shim.Error("password invalid")
 	}
 
-	privateKey, address, keyStoreJson, err := common.CreateAccount(password)
+	privateKey, address, keyStoreJson, err := CreateAccount(password)
 	if err != nil {
 		return shim.Error("Failed to create account! err=" + err.Error())
 	}
