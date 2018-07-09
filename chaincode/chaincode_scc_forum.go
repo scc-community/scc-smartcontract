@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	// "./common"
-	// "strconv"
+	"strconv"
     // "crypto/x509"
     // "encoding/pem"
 
@@ -176,7 +176,7 @@ func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestam
 	if err != nil {
 		return shim.Error("version ParseInt fail")
 	}
-	signRes, err := SignVerify(from, to, amount, timestamp, version, sign)
+	signRes, err := SignVerify(from, to, floatAmount, timestamp, version, sign)
 	if err != nil {
 		fmt.Println("SignVerify has Error")
 		return shim.Error(err.Error())

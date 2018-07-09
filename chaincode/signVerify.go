@@ -20,8 +20,8 @@ type Transaction struct {
     Version int64 `json:"version"`
 }
 // Ecrecover returns the uncompressed public key that created the given signature.
-func Ecrecover(hash, sig []byte) ([]byte, error) {
-	pub, err := SigToPub(hash, sig)
+func EcrecoverNocgo(hash, sig []byte) ([]byte, error) {
+	pub, err := SigToPubNocgo(hash, sig)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func Ecrecover(hash, sig []byte) ([]byte, error) {
 }
 
 // SigToPub returns the public key that created the given signature.
-func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
+func SigToPubNocgo(hash, sig []byte) (*ecdsa.PublicKey, error) {
 	// Convert to btcec input format with 'recovery id' v at the beginning.
 	btcsig := make([]byte, 65)
 	btcsig[0] = sig[64] + 27
@@ -63,7 +63,7 @@ func SignVerify(from, to string, amount float64, timestamp, version int64, sign 
     fmt.Println("msg hash="+hex.EncodeToString(msgHash))
 	
 	// get pubKey by msg and sign
-	pubkey, err := Ecrecover(msgHash[:], signByte)  
+	pubkey, err := EcrecoverNocgo(msgHash[:], signByte)  
 	if err != nil || len(pubkey) == 0 || pubkey[0] != 4 {    
       fmt.Println(err.Error())  
       return false, err
