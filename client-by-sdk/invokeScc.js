@@ -137,6 +137,10 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 			});
 		});
 		promises.push(txPromise);
+		if (proposalResponses && proposalResponses[0].response &&
+			proposalResponses[0].response.payload !== null && proposalResponses[0].response.payload !== undefined) {
+			promises.push(proposalResponses[0].response.payload.toString());
+		}
 
 		return Promise.all(promises);
 	} else {
@@ -158,10 +162,18 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	} else {
 		console.log('Transaction failed to be committed to the ledger due to ::'+results[1].event_status);
 	}
+	
 	result = {
 		"code" : results[0].status,
 		"msg" : "",
 		"event_status" : results[1].event_status
+	}
+	
+	if (results[2] && results[2] !== null && results[2] !== undefined && results[2] !== '') {
+		var arr = JSON.parse( results[2] );
+		for (var a in arr) {
+    		result[a] = arr[a]
+		}
 	}
 	return result;
 	//return "{\"status\":\""+results[0].status+"\", \"event_status\":\""+results[1].event_status+"\"}"

@@ -22,11 +22,11 @@ type TokenAddress struct {
 	TokenName  string
 	Address  string
 }
-type Account struct {
+type AccountInCC struct {
 	Balance  string
 	OtherTokenAddrList	[]TokenAddress
 }
-type NewAccountInfo struct {
+type AccountInfoEx struct {
 	PrivateKey  string    `json:"privateKey"`
 	Address	string    `json:"address"`
 	Keystore string    `json:"Keystore"`
@@ -66,7 +66,7 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 // init ledger
 func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
 
-	var account = Account{Balance: initAdminBalance}
+	var account = AccountInCC{Balance: initAdminBalance}
     accountAsBytes, _ := json.Marshal(account)
     APIstub.PutState(adminUserName, accountAsBytes)
 	return shim.Success(nil)
@@ -109,14 +109,15 @@ func (t *SmartContract) createAccount(APIstub shim.ChaincodeStubInterface, args 
         return shim.Error("Address already exists!")
     }
 
-	var account = Account{Balance: "0"}
+	var account = AccountInCC{Balance: "0"}
 
 	accountAsBytes, _ := json.Marshal(account)
 	APIstub.PutState(address, accountAsBytes)
 	fmt.Printf("createAccount Success! address=%s\n", address)
 
-	newAccountInfo := NewAccountInfo{privateKey, address, keyStoreJson}
-	return shim.Success(newAccountInfo)
+	newAccountInfo := AccountInfoEx{privateKey, address, keyStoreJson}
+	result, _ := json.Marshal(newAccountInfo)
+    return shim.Success(result)
 }
 
 
@@ -187,8 +188,8 @@ func transfer(APIstub shim.ChaincodeStubInterface, from string, to string, strAm
         return shim.Error("Account not exist!")
     }
 
-    accountFrom := Account{}
-    accountTo := Account{}
+    accountFrom := AccountInCC{}
+    accountTo := AccountInCC{}
 
     json.Unmarshal(accountFromAsBytes, &accountFrom)
     json.Unmarshal(accountToAsBytes, &accountTo)
