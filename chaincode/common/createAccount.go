@@ -16,14 +16,29 @@ import (
 	"math/big"
 	"io/ioutil"
 	"os"
-	"../secp256k1"
+	// "../secp256k1"
 
 	// "github.com/ethereum/go-ethereum/common"
 	// "github.com/ethereum/go-ethereum/accounts/keystore"
 	// "github.com/pborman/uuid"
+	// "github.com/ethereum/go-ethereum/common/math"
+	// "github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/scrypt"
 )
 
+const (
+    // number of bits in a big.Word
+    wordBits = 32 << (uint64(^big.Word(0)) >> 63)
+    // number of bytes in a big.Word
+    wordBytes = wordBits / 8
+	scryptR     = 8
+	scryptDKLen = 32
+	keyHeaderKDF = "scrypt"
+	version = 3
+	// maxRate is the maximum size of the internal buffer. SHAKE-256
+	// currently needs the largest buffer.
+	maxRate = 168
+)
 
 type keyStorePassphrase struct {
 	keysDirPath string
@@ -68,23 +83,39 @@ type cryptoJSON struct {
 }
 
 
-const (
-    // number of bits in a big.Word
-    wordBits = 32 << (uint64(^big.Word(0)) >> 63)
-    // number of bytes in a big.Word
-    wordBytes = wordBits / 8
-	scryptR     = 8
-	scryptDKLen = 32
-	keyHeaderKDF = "scrypt"
-	version = 3
-	// maxRate is the maximum size of the internal buffer. SHAKE-256
-	// currently needs the largest buffer.
-	maxRate = 168
-)
+// type BitCurve struct {
+// 	P       *big.Int // the order of the underlying field
+// 	N       *big.Int // the order of the base point
+// 	B       *big.Int // the constant of the BitCurve equation
+// 	Gx, Gy  *big.Int // (x,y) of the base point
+// 	BitSize int      // the size of the underlying field
+// }
 // var theCurve = new(BitCurve)
 
+// func init() {
+// 	fmt.Println("init1-------")
+// 	// See SEC 2 section 2.7.1
+// 	// curve parameters taken from:
+// 	// http://www.secg.org/collateral/sec2_final.pdf
+// 	theCurve.P = math.MustParseBig256("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
+// 	theCurve.N = math.MustParseBig256("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")
+// 	theCurve.B = math.MustParseBig256("0x0000000000000000000000000000000000000000000000000000000000000007")
+// 	theCurve.Gx = math.MustParseBig256("0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798")
+// 	theCurve.Gy = math.MustParseBig256("0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8")
+// 	theCurve.BitSize = 256
+// 	fmt.Println("init2-------")
+// }
+
+// // S256 returns a BitCurve which implements secp256k1.
+// func S256BySecp256k1() *BitCurve {
+// 	return theCurve
+// }
+
 func S256() elliptic.Curve {
-        return secp256k1.S256()
+	return S256Nocgo()
+    // return crypto.S256()
+    // return secp256k1.S256()
+	// return S256BySecp256k1()
 }
 
 
