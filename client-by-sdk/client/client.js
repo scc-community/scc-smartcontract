@@ -43,9 +43,9 @@ app.get('/createAccount', async function (req,res) {
 	    })
 	    return
 	}
-	var accountInfo = account.create(password);
-	var address = accountInfo.address
-	var args = [ address ]
+	// var accountInfo = account.create(password);
+	// var address = accountInfo.address
+	var args = [ password ]
 	const a = async ()=> {
 		return invokeScc.invoke(chaincodeName, 'createAccount', args, channelName)
 	}  
@@ -59,15 +59,14 @@ app.get('/createAccount', async function (req,res) {
 			"msg" : "call cc fail!"
 	    }
 	}
-	if (result["code"] == 'SUCCESS') {
-		for (var key in accountInfo) {
-			result[key] = accountInfo[key]
-			////
-			if(key === "keystore"){
-				console.log(JSON.stringify(accountInfo[key]))
-			}
-		} 
-	}
+	// if (result["code"] == 'SUCCESS') {
+	// 	for (var key in accountInfo) {
+	// 		result[key] = accountInfo[key]
+	// 		if(key === "keystore"){
+	// 			console.log(JSON.stringify(accountInfo[key]))
+	// 		}
+	// 	} 
+	// }
     res.send(result)
 })
 app.get('/queryAccount', async function (req,res) {
@@ -125,8 +124,8 @@ app.get('/trading', async function (req,res) {
 
 	try {
 		// var privateKey = account.recover(password, JSON.stringify(keystore));
-		var privateKey = account.recover(password, keystore)
-		var privateKeyBuf = Buffer.from(privateKey, 'hex')
+		// var privateKey = account.recover(password, keystore)
+		// var privateKeyBuf = Buffer.from(privateKey, 'hex')
 		var tx = new Transaction()
 		tx.from = from
 		tx.to = to
