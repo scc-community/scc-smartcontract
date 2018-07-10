@@ -153,8 +153,7 @@ func (t *SmartContract) queryAccount(APIstub shim.ChaincodeStubInterface, args [
 
 func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestamp, strVersion, sign string, checkSign bool) sc.Response {
 
-	if(from == "" || to == "" || strAmt == "" || strTimestamp == "" || strVersion == "" 
-		|| (checkSign == true && sign == "")) {
+	if(from == "" || to == "" || strAmt == "" || strTimestamp == "" || strVersion == "" || (checkSign == true && sign == "")) {
 		return shim.Error("transfer param has null value")
 	}
 
@@ -202,11 +201,11 @@ func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestam
     accountToAsBytes, _ := APIstub.GetState(to)
 
     if accountFromAsBytes == nil {
-        return shim.Error("Account not exist!")
+        return shim.Error("Account of from not exist!")
     }
 
     if accountToAsBytes == nil {
-        return shim.Error("Account not exist!")
+        return shim.Error("Account of to not exist!")
     }
 
     accountFrom := AccountInCC{}

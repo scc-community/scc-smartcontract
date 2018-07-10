@@ -99,10 +99,10 @@ app.get('/trading', async function (req,res) {
 	var to = req.query.to
 	var amt = req.query.amt
 	var privateKey = req.query.privateKey
-	var timestamp = Date.now()
-	var version = 1
+	var timestamp = req.query.timestamp//Date.now()
+	var version = req.query.version
 	var sign = ""
-	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) || !_checkParam(privateKey)) {
+	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) || !_checkParam(timestamp)|| !_checkParam(version) || !_checkParam(privateKey)) {
 		res.send({
 			"code" : "FAIL",
 			"msg" : "param fail!"
@@ -118,7 +118,7 @@ app.get('/trading', async function (req,res) {
 		tx.amount = parseFloat(amt)
 		tx.timestamp = parseInt(timestamp)
 		tx.version = parseInt(version)
-		tx.sign(privateKey)
+		tx.sign(Buffer.from(privateKey, 'hex'))
 		var suf
 		if (tx.v == 27) {
 			suf = "00"
@@ -136,7 +136,7 @@ app.get('/trading', async function (req,res) {
 		return
 	}
 
-	var args = [ tx.from, tx.to, tx.amount, tx.timestamp, tx.version, sign ]
+	var args = [ from, to, amt, timestamp, version, sign ]
 	const a= async ()=> {  
 		return invokeScc.invoke(chaincodeName, 'trading', args, channelName)
 	}  

@@ -60,7 +60,7 @@ func SignVerify(from, to string, amount float64, timestamp, version int64, sign 
     h := sha256.New()
     h.Write([]byte(string(msgjsonstr)))
     msgHash := h.Sum(nil)
-    fmt.Println("msg hash="+hex.EncodeToString(msgHash))
+    // fmt.Println("msg hash="+hex.EncodeToString(msgHash))
 	
 	// get pubKey by msg and sign
 	pubkey, err := EcrecoverNocgo(msgHash[:], signByte)  
@@ -73,12 +73,13 @@ func SignVerify(from, to string, amount float64, timestamp, version int64, sign 
  	// convert pubKey to Address  
     var addr Address  
     copy(addr[:], Keccak256(pubkey[1:])[12:])  
-	fmt.Println("address="+"0x" + hex.EncodeToString(addr[:]))
+	// fmt.Println("address="+"0x" + hex.EncodeToString(addr[:]))
 
 	// address := crypto.PubkeyToAddress(*abc)
 	if (("0x"+hex.EncodeToString(addr[:])) == (msg.From)) {
 		return true, nil
 	} else {
+		fmt.Println("SignVerify fail! address="+"0x" + hex.EncodeToString(addr[:]) + ", from=" + msg.From)
 		return false, nil
 	}
 	
