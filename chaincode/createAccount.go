@@ -14,9 +14,8 @@ import (
 	crand "crypto/rand"
 	"path/filepath"
 	"math/big"
-	"io/ioutil"
-	"os"
-	// "../secp256k1"
+	// "io/ioutil"
+	// "os"
 
 	// "github.com/ethereum/go-ethereum/common"
 	// "github.com/ethereum/go-ethereum/accounts/keystore"
@@ -268,27 +267,27 @@ func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
 	return json.Marshal(encryptedKeyJSONV3)
 }
 
-func writeKeyFile(file string, content []byte) error {
-	// Create the keystore directory with appropriate permissions
-	// in case it is not present yet.
-	const dirPerm = 0700
-	if err := os.MkdirAll(filepath.Dir(file), dirPerm); err != nil {
-		return err
-	}
-	// Atomic write: create a temporary hidden file first
-	// then move it into place. TempFile assigns mode 0600.
-	f, err := ioutil.TempFile(filepath.Dir(file), "."+filepath.Base(file)+".tmp")
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(content); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return err
-	}
-	f.Close()
-	return os.Rename(f.Name(), file)
-}
+// func writeKeyFile(file string, content []byte) error {
+// 	// Create the keystore directory with appropriate permissions
+// 	// in case it is not present yet.
+// 	const dirPerm = 0700
+// 	if err := os.MkdirAll(filepath.Dir(file), dirPerm); err != nil {
+// 		return err
+// 	}
+// 	// Atomic write: create a temporary hidden file first
+// 	// then move it into place. TempFile assigns mode 0600.
+// 	f, err := ioutil.TempFile(filepath.Dir(file), "."+filepath.Base(file)+".tmp")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if _, err := f.Write(content); err != nil {
+// 		f.Close()
+// 		os.Remove(f.Name())
+// 		return err
+// 	}
+// 	f.Close()
+// 	return os.Rename(f.Name(), file)
+// }
 
 func (ks keyStorePassphrase) StoreKey(key *Key, auth string) ([]byte, error) {
 	return EncryptKey(key, auth, ks.scryptN, ks.scryptP)
