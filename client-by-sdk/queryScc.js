@@ -96,6 +96,11 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	return result
 }).catch((err) => {
 	console.error('Failed to query successfully :: ' + err);
+	var result = {
+            "code" : "FAIL",
+            "msg" : err.message
+    }
+    return result
 });
 }
 

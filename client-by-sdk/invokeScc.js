@@ -76,77 +76,81 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	let isProposalGood = false;
 	if (proposalResponses && proposalResponses[0].response &&
 		proposalResponses[0].response.status === 200) {
-			isProposalGood = true;
-			console.log('Transaction proposal was good');
-		} else {
-			console.error('Transaction proposal was bad');
-		}
-	if (isProposalGood) {
-		console.log(util.format(
-			'Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s"',
-			proposalResponses[0].response.status, proposalResponses[0].response.message));
-
-		// build up the request for the orderer to have the transaction committed
-		var request = {
-			proposalResponses: proposalResponses,
-			proposal: proposal
-		};
-
-		// set the transaction listener and set a timeout of 30 sec
-		// if the transaction did not get committed within the timeout period,
-		// report a TIMEOUT status
-		var transaction_id_string = tx_id.getTransactionID(); //Get the transaction ID string to be used by the event processing
-		var promises = [];
-
-		var sendPromise = channel.sendTransaction(request);
-		promises.push(sendPromise); //we want the send transaction first, so that we know where to check status
-
-		// get an eventhub once the fabric client has a user assigned. The user
-		// is required bacause the event registration must be signed
-		let event_hub = fabric_client.newEventHub();
-		event_hub.setPeerAddr('grpc://localhost:7053');
-
-		// using resolve the promise so that result status may be processed
-		// under the then clause rather than having the catch clause process
-		// the status
-		let txPromise = new Promise((resolve, reject) => {
-			let handle = setTimeout(() => {
-				event_hub.disconnect();
-				resolve({event_status : 'TIMEOUT'}); //we could use reject(new Error('Trnasaction did not complete within 30 seconds'));
-			}, 3000);
-			event_hub.connect();
-			event_hub.registerTxEvent(transaction_id_string, (tx, code) => {
-				// this is the callback for transaction event status
-				// first some clean up of event listener
-				clearTimeout(handle);
-				event_hub.unregisterTxEvent(transaction_id_string);
-				event_hub.disconnect();
-
-				// now let the application know what happened
-				var return_status = {event_status : code, tx_id : transaction_id_string};
-				if (code !== 'VALID') {
-					console.error('The transaction was invalid, code = ' + code);
-					resolve(return_status); // we could use reject(new Error('Problem with the tranaction, event status ::'+code));
-				} else {
-					console.log('The transaction has been committed on peer ' + event_hub._ep._endpoint.addr);
-					resolve(return_status);
-				}
-			}, (err) => {
-				//this is the callback if something goes wrong with the event registration or processing
-				reject(new Error('There was a problem with the eventhub ::'+err));
-			});
-		});
-		promises.push(txPromise);
-		if (proposalResponses && proposalResponses[0].response &&
-			proposalResponses[0].response.payload !== null && proposalResponses[0].response.payload !== undefined) {
-			promises.push(proposalResponses[0].response.payload.toString());
-		}
-
-		return Promise.all(promises);
+		isProposalGood = true;
+		console.log('Transaction proposal was good');
 	} else {
-		console.error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
-		throw new Error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
+		console.error('Transaction proposal was bad');
 	}
+	if (!isProposalGood) {
+		var errMsg = 'Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...'
+		if (proposalResponses && proposalResponses[0].response && proposalResponses[0].message) {
+			errMsg = proposalResponses[0].message
+		}
+		console.error(errMsg);
+		throw new Error(errMsg);
+	}
+	console.log(util.format(
+		'Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s"',
+		proposalResponses[0].response.status, proposalResponses[0].response.message));
+
+	// build up the request for the orderer to have the transaction committed
+	var request = {
+		proposalResponses: proposalResponses,
+		proposal: proposal
+	};
+
+	// set the transaction listener and set a timeout of 30 sec
+	// if the transaction did not get committed within the timeout period,
+	// report a TIMEOUT status
+	var transaction_id_string = tx_id.getTransactionID(); //Get the transaction ID string to be used by the event processing
+	var promises = [];
+
+	var sendPromise = channel.sendTransaction(request);
+	promises.push(sendPromise); //we want the send transaction first, so that we know where to check status
+
+	// get an eventhub once the fabric client has a user assigned. The user
+	// is required bacause the event registration must be signed
+	let event_hub = fabric_client.newEventHub();
+	event_hub.setPeerAddr('grpc://localhost:7053');
+
+	// using resolve the promise so that result status may be processed
+	// under the then clause rather than having the catch clause process
+	// the status
+	let txPromise = new Promise((resolve, reject) => {
+		let handle = setTimeout(() => {
+			event_hub.disconnect();
+			resolve({event_status : 'TIMEOUT'}); //we could use reject(new Error('Trnasaction did not complete within 30 seconds'));
+		}, 3000);
+		event_hub.connect();
+		event_hub.registerTxEvent(transaction_id_string, (tx, code) => {
+			// this is the callback for transaction event status
+			// first some clean up of event listener
+			clearTimeout(handle);
+			event_hub.unregisterTxEvent(transaction_id_string);
+			event_hub.disconnect();
+
+			// now let the application know what happened
+			var return_status = {event_status : code, tx_id : transaction_id_string};
+			if (code !== 'VALID') {
+				console.error('The transaction was invalid, code = ' + code);
+				resolve(return_status); // we could use reject(new Error('Problem with the tranaction, event status ::'+code));
+			} else {
+				console.log('The transaction has been committed on peer ' + event_hub._ep._endpoint.addr);
+				resolve(return_status);
+			}
+		}, (err) => {
+			//this is the callback if something goes wrong with the event registration or processing
+			reject(new Error('There was a problem with the eventhub ::'+err));
+		});
+	});
+	promises.push(txPromise);
+	if (proposalResponses && proposalResponses[0].response &&
+		proposalResponses[0].response.payload !== null && proposalResponses[0].response.payload !== undefined) {
+		promises.push(proposalResponses[0].response.payload.toString());
+	}
+
+	return Promise.all(promises);
+	
 }).then((results) => {
 	console.log('Send transaction promise and event listener promise have completed');
 	var result, msg
@@ -179,6 +183,11 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	//return "{\"status\":\""+results[0].status+"\", \"event_status\":\""+results[1].event_status+"\"}"
 }).catch((err) => {
 	console.error('Failed to invoke successfully :: ' + err);
+	var result = {
+        "code" : "FAIL",
+        "msg" : err.message
+    }
+    return result
 });
 }
 
