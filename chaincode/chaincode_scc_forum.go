@@ -4,6 +4,7 @@ import (
     // "bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 	// "./common"
 	"strconv"
     // "crypto/x509"
@@ -32,13 +33,16 @@ type AccountInfoEx struct {
 	Keystore string    `json:"Keystore"`
 }
 
+const (
+	EXPIRE_TIME = 600000
+	adminUserName = "xxxx"
+	initAdminBalance = "100"
+)
+
 // type PubAndPriKey struct {
 // 	PrivateKey  string
 // 	PublicKey	string
 // }
-
-var adminUserName = "xxxx"
-var initAdminBalance = "100"
 
 func (s *SmartContract) Init(APIAPIstub shim.ChaincodeStubInterface) sc.Response {
 	return shim.Success(nil)
@@ -56,8 +60,8 @@ func (t *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 		return t.queryAccount(APIstub, args)
 	} else if function == "trading" {
 		return t.trading(APIstub, args)
-	// } else if function == "reward" {
-	// 	return t.reward(APIstub, args)
+	} else if function == "reward" {
+		return t.reward(APIstub, args)
 	}
 
 	return shim.Error("Invalid invoke function name")
@@ -147,10 +151,11 @@ func (t *SmartContract) queryAccount(APIstub shim.ChaincodeStubInterface, args [
 	return shim.Success(accountInfo)
 }
 
-func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestamp, strVersion, sign string) sc.Response {
+func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestamp, strVersion, sign string, checkSign bool) sc.Response {
 
-	if(from == "" || to == "" || strAmt == "" || strTimestamp == "" || strVersion == "") {
-		return shim.Error("param has null value")
+	if(from == "" || to == "" || strAmt == "" || strTimestamp == "" || strVersion == "" 
+		|| (checkSign == true && sign == "")) {
+		return shim.Error("transfer param has null value")
 	}
 
     if from == to {
@@ -162,7 +167,7 @@ func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestam
         return shim.Error("amount format invalid, string convert to decimal fail")
     }
     if(!amount.IsPositive()) {
-        return shim.Error("Incorrect amount < 0")
+        return shim.Error("Incorrect amount <= 0")
     }
     floatAmount, bolRes := amount.Float64()
     if bolRes == false {
@@ -172,17 +177,25 @@ func transfer(APIstub shim.ChaincodeStubInterface, from, to, strAmt, strTimestam
 	if err != nil {
 		return shim.Error("timestamp ParseInt fail")
 	}
+
+	curTimestamp := time.Now().UnixNano()/1e6
+    if(curTimestamp < timestamp || (curTimestamp - timestamp) > EXPIRE_TIME) {
+		return shim.Error("Timestamp Expire!")
+    }
 	version, err := strconv.ParseInt(strVersion, 10, 64)
 	if err != nil {
 		return shim.Error("version ParseInt fail")
 	}
-	signRes, err := SignVerify(from, to, floatAmount, timestamp, version, sign)
-	if err != nil {
-		fmt.Println("SignVerify has Error")
-		return shim.Error(err.Error())
-	}
-	if signRes == false {
-		return shim.Error("sign verify fail")
+	if (checkSign == true) {
+		signRes, err := SignVerify(from, to, floatAmount, timestamp, version, sign)
+		if err != nil {
+			fmt.Println("SignVerify has Error")
+			return shim.Error(err.Error())
+		}
+		if signRes == false {
+			return shim.Error("sign verify fail")
+		}
+		fmt.Println("SignVerify Success")
 	}
 
     accountFromAsBytes, _ := APIstub.GetState(from)
@@ -241,21 +254,26 @@ func (s *SmartContract) trading(APIstub shim.ChaincodeStubInterface, args []stri
 	strVersion := args[4]
 	sign := args[5]
 	fmt.Printf("trading BEGIN: from=%s, to=%s, amt=%s, timestamp=%s, version=%s, sign=%s\n", from, to, strAmt, strTimestamp, strVersion, sign)
-	return transfer(APIstub, from, to, strAmt, strTimestamp, strVersion, sign)
+	return transfer(APIstub, from, to, strAmt, strTimestamp, strVersion, sign, true)
 }
 
 // give an account some reward
-// func (t *SmartContract) reward(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
-// 	if len(args) != 2 {
-// 		return shim.Error("Incorrect number of arguments. Expecting 2")
-// 	}
+func (t *SmartContract) reward(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+	if len(args) != 2 {
+		return shim.Error("Incorrect number of arguments. Expecting 2")
+	}
 
-// 	from := adminUserName
-// 	to := args[0]
-// 	strAmt := args[1]
-// 	fmt.Printf("reward BEGIN: to=%s, amt=%s\n", to, strAmt)
-// 	return transfer(APIstub, from, to, strAmt, nil, nil)
-// }
+	from := adminUserName
+	to := args[0]
+	strAmt := args[1]
+
+	curTimestamp := time.Now().UnixNano()/1e6
+	strTimestamp := strconv.FormatInt(curTimestamp,10)
+	strVersion := "1"
+	sign := ""
+	fmt.Printf("reward BEGIN: from=%s, to=%s, amt=%s, timestamp=%s, version=%s, sign=%s\n", from, to, strAmt, strTimestamp, strVersion, sign)
+	return transfer(APIstub, from, to, strAmt, strTimestamp, strVersion, sign, false)
+}
 
 func main() {
 	err := shim.Start(new(SmartContract))

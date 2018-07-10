@@ -98,23 +98,11 @@ app.get('/trading', async function (req,res) {
 	var from = req.query.from
 	var to = req.query.to
 	var amt = req.query.amt
-	var r = req.query.r
-	var v = req.query.v
-	var s = req.query.s
-	var password = req.query.password
-	var keystore = req.query.keystore	// json
-	var timestamp = req.query.timestamp
-	var currentTimestamp = Date.now();
-    if(!_checkParam(timestamp) || Math.abs(currentTimestamp - timestamp) > interval) {
-        res.send({
-			"code" : "FAIL",
-			"msg" : "param fail! Timestamp Error!"
-	    })
-		return
-    }
-	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) 
-		 || !_checkParam(r) || !_checkParam(v) || !_checkParam(s)
-		 || !_checkParam(password) || !_checkParam(keystore)) {
+	var privateKey = req.query.privateKey
+	var timestamp = Date.now()
+	var version = 1
+	var sign = ""
+	if (!_checkParam(from) || !_checkParam(to) || !_checkParam(amt) || !_checkParam(privateKey)) {
 		res.send({
 			"code" : "FAIL",
 			"msg" : "param fail!"
@@ -122,36 +110,33 @@ app.get('/trading', async function (req,res) {
 		return
 	}
 
+	var tx = new Transaction()
 	try {
-		// var privateKey = account.recover(password, JSON.stringify(keystore));
-		// var privateKey = account.recover(password, keystore)
-		// var privateKeyBuf = Buffer.from(privateKey, 'hex')
-		var tx = new Transaction()
+
 		tx.from = from
 		tx.to = to
 		tx.amount = parseFloat(amt)
 		tx.timestamp = parseInt(timestamp)
-		tx.r = Buffer.from(r, 'hex')
-		tx.v = parseInt(v)
-		tx.s = Buffer.from(s, 'hex')
-		// tx.sign(privateKeyBuf);
-		if (!tx.verify()) {
-			res.send({
-				"code" : "FAIL",
-				"msg" : "sign check fail!"
-		    })
-		    return
+		tx.version = parseInt(version)
+		tx.sign(privateKey)
+		var suf
+		if (tx.v == 27) {
+			suf = "00"
+		} else {
+			suf = "01"
 		}
+		sign = "0x" + tx.r.toString("hex") + tx.s.toString("hex") + suf
+
 	} catch(err) {
 		console.error(err)
 		res.send({
 			"code" : "FAIL",
-			"msg" : "sign verify catch error"
+			"msg" : "build tx catch error"
 	    })
 		return
 	}
 
-	var args = [ from, to, amt ]
+	var args = [ tx.from, tx.to, tx.amount, tx.timestamp, tx.version, sign ]
 	const a= async ()=> {  
 		return invokeScc.invoke(chaincodeName, 'trading', args, channelName)
 	}  
