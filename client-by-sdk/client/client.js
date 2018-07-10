@@ -59,14 +59,6 @@ app.get('/createAccount', async function (req,res) {
 			"msg" : "call cc fail!"
 	    }
 	}
-	// if (result["code"] == 'SUCCESS') {
-	// 	for (var key in accountInfo) {
-	// 		result[key] = accountInfo[key]
-	// 		if(key === "keystore"){
-	// 			console.log(JSON.stringify(accountInfo[key]))
-	// 		}
-	// 	} 
-	// }
     res.send(result)
 })
 app.get('/queryAccount', async function (req,res) {

@@ -83,8 +83,8 @@ return Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	}
 	if (!isProposalGood) {
 		var errMsg = 'Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...'
-		if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.message) {
-			errMsg = proposalResponses[0].response.message
+		if (proposalResponses && proposalResponses[0].details) {
+			errMsg = proposalResponses[0].details
 		}
 		console.error(errMsg);
 		throw new Error(errMsg);
